@@ -1,0 +1,7 @@
+name = "BoardGameGeek"
+uuid = "57fe6dd9-21bb-41a8-84a4-b199e28a0641"
+authors = ["Adrian Hill"]
+version = "0.1.0"
+
+[compat]
+julia = "1.7"
