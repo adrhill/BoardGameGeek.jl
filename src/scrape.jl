@@ -1,4 +1,6 @@
-using HTTP, EzXML, Dates
+using HTTP, EzXML, Dates, ProgressMeter
+
+const XMLAPI2 = "https://boardgamegeek.com/xmlapi2"
 
 struct BGGUser
     id::Int
@@ -22,13 +24,12 @@ end
 Get user from name string.
 """
 function get_user(name::AbstractString)
-    user = get_xml("https://api.geekdo.com/xmlapi2/user?name=$(name)")
-    id = parse(Int, user["id"])
-    name = user["name"]
-    attr = elements(user)
-    yearregistered = parse(Int, attr[4]["value"])
-    lastlogin = Date(attr[5]["value"])
-    country = attr[7]["value"]
+    doc = get_xml("$XMLAPI2/user?name=$(name)")
+    id = parse(Int, findfirst("/user", doc)["id"])
+    name = findfirst("/user", doc)["name"]
+    yearregistered = parse(Int, findfirst("/user/yearregistered", doc)["value"])
+    lastlogin = Date(findfirst("/user/lastlogin", doc)["value"])
+    country = findfirst("/user/country", doc)["value"]
     return BGGUser(id, name, country, yearregistered, lastlogin)
 end
 
@@ -39,10 +40,8 @@ end
 Return list of user names of buddies of a user.
 """
 function get_buddies(name::String)
-    user = get_xml("https://api.geekdo.com/xmlapi2/user?name=$(name)&buddies=1")
-    buddies = user.lastelement
-    names = [b["name"] for b in elements(buddies)]
-    return names
+    doc = get_xml("$XMLAPI2/user?name=$(name)&buddies=1")
+    return [b["name"] for b in findall("/user/buddies/buddy", doc)]
 end
 get_buddies(user::BGGUser) = get_buddies(user.name)
 
@@ -53,14 +52,15 @@ get_buddies(user::BGGUser) = get_buddies(user.name)
 Return list of board game reviews a user wrote (ignoring expansions).
 """
 function get_user_reviews(name::String)
-    collection = get_xml(
-        "https://api.geekdo.com/xmlapi2/collection?username=$(name)&rated=1&stats=1&excludesubtype=boardgameexpansion",
+    doc = get_xml(
+        "$(XMLAPI2)/collection?username=$(name)&rated=1&stats=1&excludesubtype=boardgameexpansion",
     )
-    return _parse_review_from_collection.(elements(collection))
+    games = findall("/items/item", doc)
+    return _parse_review_from_collection.(games)
 end
 get_user_reviews(user::BGGUser) = get_user_reviews(user.name)
 
-struct BGGFullReview # review scraped from user page
+struct BGGUserReview # review scraped from user page
     id::Int
     name::String
     rating::Float32
@@ -71,20 +71,24 @@ end
 
 function _parse_review_from_collection(n::EzXML.Node)
     id = parse(Int, n["objectid"])
-    attr = elements(n)
-    name = attr[1].content
-    rating = parse(Float32, attr[5].firstelement["value"])
-    lastmodified = Date(attr[6]["lastmodified"][1:10])
-    numplays = parse(Int, attr[7].content)
-    if length(attr) > 7 && attr[8].name == "comment"
-        comment = attr[8].content
-    else
-        comment = ""
+
+    name = findfirst("name", n).content
+    rating = parse(Float32, findfirst("stats/rating", n)["value"])
+    lastmodified = Date(findfirst("status", n)["lastmodified"][1:10])
+    numplays = parse(Int, findfirst("numplays", n).content)
+    _comment = findfirst("comment", n)
+    comment = ""
+    if !isnothing(_comment)
+        comment = _comment.content
     end
-    return BGGReview(id, name, rating, lastmodified, numplays, comment)
+    return BGGUserReview(id, name, rating, lastmodified, numplays, comment)
 end
 
 struct BGGGameInfo
+    id::Int
+    name::String
+    mechanics::Vector{String}
+    families::Vector{String}
     yearpublished::Int
     minplayers::Int
     maxplayers::Int
@@ -92,8 +96,7 @@ struct BGGGameInfo
     minplaytime::Int
     maxplaytime::Int
     minage::Int
-    name::String
-    suggested_numplayers::Vector{Tuple{Int64,Int64,Int64}}
+    suggested_numplayers::Dict{String,Tuple{Int64,Int64,Int64}}
     usersrated::Int
     average::Float32
     bayesaverage::Float32
@@ -106,58 +109,60 @@ struct BGGGameInfo
     numcomments::Int
     numweights::Int
     averageweight::Float32
-    mechanics::Vector{String}
-    families::Vector{String}
 end
 
 function get_game_info(id::Integer)
-    game = get_xml("https://boardgamegeek.com/xmlapi2/thing?id=$(id)&stats=1").firstelement
-    attr = elements(game)
-    # Find primary name
-    name = filter(n -> (n.name == "name" && n["type"] == "primary"), attr)[1]["value"]
+    doc = get_xml("$XMLAPI2/thing?id=$(id)&stats=1")
+    game = findfirst("/items/item", doc)
+
+    # Primary name of game
+    name = findfirst("name[@type='primary']", game)["value"]
+
+    # Parse mechanics and families
+    boardgamemechanic = [
+        n["value"] for n in findall("link[@type='boardgamemechanic']", game)
+    ]
+    boardgamefamily = [n["value"] for n in findall("link[@type='boardgamefamily']", game)]
 
     # Find first index after list of names
-    i = findfirst(n -> n.name == "yearpublished", attr)
-    yearpublished = parse(Int, attr[i]["value"])
-    minplayers = parse(Int, attr[i + 1]["value"])
-    maxplayers = parse(Int, attr[i + 2]["value"])
+    yearpublished = parse(Int, findfirst("yearpublished", game)["value"])
+    minplayers = parse(Int, findfirst("minplayers", game)["value"])
+    maxplayers = parse(Int, findfirst("maxplayers", game)["value"])
 
     # Vote counts for player count recommendations
-    suggested_numplayers = map(elements(attr[i + 3])) do playercountrecs
-        recs = elements(playercountrecs)
-        # Best / Recommended / Not Recommended
-        return parse.(Int, (recs[1]["numvotes"], recs[2]["numvotes"], recs[3]["numvotes"]))
+    suggested_numplayers = Dict{String,Tuple{Int64,Int64,Int64}}()
+    for res in findall("poll[@name='suggested_numplayers']/results", game)
+        numplayers = res["numplayers"]
+        suggested_numplayers[numplayers] = tuple(
+            parse.(Int, r["numvotes"] for r in elements(res))...
+        )
     end
 
-    playingtime = parse(Int, attr[i + 4]["value"])
-    minplaytime = parse(Int, attr[i + 5]["value"])
-    maxplaytime = parse(Int, attr[i + 6]["value"])
-    minage = parse(Int, attr[i + 7]["value"])
+    playingtime = parse(Int, findfirst("playingtime", game)["value"])
+    minplaytime = parse(Int, findfirst("minplaytime", game)["value"])
+    maxplaytime = parse(Int, findfirst("maxplaytime", game)["value"])
+    minage = parse(Int, findfirst("minage", game)["value"])
 
     # Parse ratings summary
-    ratings = elements(attr[end].firstelement)
-    usersrated = parse(Int, ratings[1]["value"])
-    average = parse(Float32, ratings[2]["value"])
-    bayesaverage = parse(Float32, ratings[3]["value"])
-    stddev = parse(Float32, ratings[5]["value"])
-    median = parse(Float32, ratings[6]["value"])
-    owned = parse(Int, ratings[7]["value"])
-    trading = parse(Int, ratings[8]["value"])
-    wanting = parse(Int, ratings[9]["value"])
-    wishing = parse(Int, ratings[10]["value"])
-    numcomments = parse(Int, ratings[11]["value"])
-    numweights = parse(Int, ratings[12]["value"])
-    averageweight = parse(Float32, ratings[13]["value"])
-
-    # Game mechanics
-    mechattr = filter(n -> (n.name == "link" && n["type"] == "boardgamemechanic"), attr)
-    mechanics = [n["value"] for n in mechattr]
-
-    # Game families
-    famattr = filter(n -> (n.name == "link" && n["type"] == "boardgamefamily"), attr)
-    families = [n["value"] for n in famattr]
+    ratings = findfirst("statistics/ratings", game)
+    usersrated = parse(Int, findfirst("usersrated", ratings)["value"])
+    average = parse(Float32, findfirst("average", ratings)["value"])
+    bayesaverage = parse(Float32, findfirst("bayesaverage", ratings)["value"])
+    stddev = parse(Float32, findfirst("stddev", ratings)["value"])
+    median = parse(Float32, findfirst("median", ratings)["value"])
+    owned = parse(Int, findfirst("owned", ratings)["value"])
+    trading = parse(Int, findfirst("trading", ratings)["value"])
+    wanting = parse(Int, findfirst("wanting", ratings)["value"])
+    wishing = parse(Int, findfirst("wishing", ratings)["value"])
+    numcomments = parse(Int, findfirst("numcomments", ratings)["value"])
+    numweights = parse(Int, findfirst("numweights", ratings)["value"])
+    averageweight = parse(Float32, findfirst("averageweight", ratings)["value"])
 
     return BGGGameInfo(
+        id,
+        name,
+        boardgamemechanic,
+        boardgamefamily,
         yearpublished,
         minplayers,
         maxplayers,
@@ -165,7 +170,6 @@ function get_game_info(id::Integer)
         minplaytime,
         maxplaytime,
         minage,
-        name,
         suggested_numplayers,
         usersrated,
         average,
@@ -179,33 +183,42 @@ function get_game_info(id::Integer)
         numcomments,
         numweights,
         averageweight,
-        mechanics,
-        families,
     )
 end
 
-struct BGGShortReview # review scraped from game page
+struct BGGReview # review scraped from game page
     id::Int
+    name::String
     username::String
     rating::Float32
     comment::String
 end
 
-function _node2shortreview(id, n::EzXML.Node)
-    return BGGShortReview(id, n["username"], parse(Float32, n["rating"]), n["value"])
-end
+function get_game_reviews(id::Integer; waittime=2, pagesize=100)
+    doc = get_xml("$XMLAPI2/thing?id=$(id)&stats=1")
+    name = findfirst("/items/item/name[@type='primary']", doc)["value"]
+    usersrated = parse(
+        Int, findfirst("/items/item/statistics/ratings/usersrated", doc)["value"]
+    )
+    maxpage = cld(usersrated, pagesize) # using `pagesize` reviews per page
 
-function get_game_reviews(id::Integer; waittime=1.5)
-    all_reviews = Vector{BGGShortReview}()
-    page = 1
-    while true
-        url = "https://boardgamegeek.com/xmlapi2/thing?id=$(id)&ratingcomments=1&page=$(page)&pagesize=100"
-        game = get_xml(url).firstelement
-        reviews = elements(game.lastelement)
-        append!(all_reviews, map(r -> _node2shortreview(id, r), reviews))
-        length(reviews) != 100 && break # last page
-        page += 1
+    # The actual number of reviews is usually slightly higher than `usersrated`.
+    # Count number of reviews on last page to get the real count.
+    doc = get_xml("$XMLAPI2/thing?id=$(id)&ratingcomments=1&page=$(maxpage)&pagesize=$(pagesize)")
+    review_count = (maxpage-1)*pagesize + length(findall("/items/item/comments/comment", doc))
+
+    reviews = Vector{BGGReview}(undef, review_count) # pre-allocate
+    @showprogress 1 "Scraping $review_count reviews for $name..." for page in 1:maxpage
+        doc = get_xml(
+            "$XMLAPI2/thing?id=$(id)&ratingcomments=1&page=$(page)&pagesize=$(pagesize)"
+        )
+        pagereviews = findall("/items/item/comments/comment", doc)
+        for (i, r) in enumerate(pagereviews)
+            reviews[(page - 1) * pagesize + i] = BGGReview(
+                id, name, r["username"], parse(Float32, r["rating"]), r["value"]
+            )
+        end
         sleep(waittime)
     end
-    return all_reviews
+    return reviews
 end
