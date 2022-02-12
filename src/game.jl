@@ -6,6 +6,8 @@ struct BGGReview # review scraped from game page
     comment::String
 end
 
+Base.show(io::IO, r::BGGReview) = print(io, "$(r.rating)/10 for $(r.name) from $(r.username)")
+
 struct BGGGameInfo
     id::Int
     name::String
