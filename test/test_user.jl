@@ -3,13 +3,13 @@ using Dates
 
 name = "bggjulia"
 
-user = get_user(name)
+user = userinfo(name)
 @test user.id == 3162756
 @test user.name == name
 @test user.country == "Poland"
 @test user.yearregistered == 2022
 
-reviews = get_user_reviews(name)
+reviews = userreviews(name)
 r = first(reviews)
 @test length(reviews) == 1
 @test r.id == 188

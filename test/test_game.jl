@@ -2,13 +2,13 @@ using BoardGameGeek
 
 id = 75674 # https://boardgamegeek.com/boardgame/75674
 
-game = get_game_info(id)
+game = gameinfo(id)
 @test game.name == "Julian: Triumph Before the Storm"
 @test game.usersrated > 65
 
-reviews = get_game_reviews(id)
+reviews = gamereviews(id)
 @test length(reviews) == game.usersrated
 @test sum(r -> r.rating, reviews) / length(reviews) ≈ game.average
 
-reviews2 = get_game_reviews(id; waittime=2.5, pagesize=20)
+reviews2 = gamereviews(id; waittime=2.5, pagesize=50)
 @test reviews2 == reviews

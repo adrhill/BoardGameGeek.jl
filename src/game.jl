@@ -36,7 +36,7 @@ struct BGGGameInfo
 end
 
 """
-    get_game_reviews(id::Integer; kwargs...)
+    gamereviews(id::Integer; kwargs...)
 
 Scrape all reviews for a game
 
@@ -46,7 +46,7 @@ Scrape all reviews for a game
   - `waittime::Real`:
     Wait time between page requests in seconds. Defaults to `2.0f0`.
 """
-function get_game_reviews(id::Integer; pagesize::Integer=100, waittime=2.0f0)
+function gamereviews(id::Integer; pagesize::Integer=100, waittime=2.0f0)
     doc = get_xml("$XMLAPI2/thing?id=$(id)&stats=1")
     name = findfirst("/items/item/name[@type='primary']", doc)["value"]
     usersrated = parse(
@@ -83,11 +83,11 @@ function get_game_reviews(id::Integer; pagesize::Integer=100, waittime=2.0f0)
 end
 
 """
-    get_game_info(id::Integer)
+    gameinfo(id::Integer)
 
 Get game information and summary of reviews.
 """
-function get_game_info(id::Integer)
+function gameinfo(id::Integer)
     doc = get_xml("$XMLAPI2/thing?id=$(id)&stats=1")
     game = findfirst("/items/item", doc)
 
