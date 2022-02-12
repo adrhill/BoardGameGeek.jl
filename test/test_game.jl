@@ -9,3 +9,6 @@ game = get_game_info(id)
 reviews = get_game_reviews(id)
 @test length(reviews) == game.usersrated
 @test sum(r -> r.rating, reviews) / length(reviews) ≈ game.average
+
+reviews2 = get_game_reviews(id; waittime=2.5, pagesize=20)
+@test reviews2 == reviews

@@ -33,7 +33,18 @@ struct BGGGameInfo
     averageweight::Float32
 end
 
-function get_game_reviews(id::Integer; waittime=2, pagesize=100)
+"""
+    get_game_reviews(id::Integer; kwargs...)
+
+Scrape all reviews for a game
+
+# Keyword arguments
+  - `pagesize::Integer`:
+    Number of reviews per page request. Defaults to API maximum 100.
+  - `waittime::Real`:
+    Wait time between page requests in seconds. Defaults to `2.0f0`.
+"""
+function get_game_reviews(id::Integer; pagesize::Integer=100, waittime=2.0f0)
     doc = get_xml("$XMLAPI2/thing?id=$(id)&stats=1")
     name = findfirst("/items/item/name[@type='primary']", doc)["value"]
     usersrated = parse(
@@ -69,6 +80,11 @@ function get_game_reviews(id::Integer; waittime=2, pagesize=100)
     return reviews
 end
 
+"""
+    get_game_info(id::Integer)
+
+Get game information and summary of reviews.
+"""
 function get_game_info(id::Integer)
     doc = get_xml("$XMLAPI2/thing?id=$(id)&stats=1")
     game = findfirst("/items/item", doc)

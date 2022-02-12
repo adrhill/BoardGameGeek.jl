@@ -10,8 +10,8 @@ using ProgressMeter: @showprogress
 const XMLAPI2 = "https://boardgamegeek.com/xmlapi2"
 
 include("utils.jl")
-include("user.jl")
 include("game.jl")
+include("user.jl")
 
 export BGGUser
 export get_user, get_buddies, get_user_reviews

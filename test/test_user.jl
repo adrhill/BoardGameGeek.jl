@@ -14,7 +14,6 @@ r = first(reviews)
 @test length(reviews) == 1
 @test r.id == 188
 @test r.name == "Go"
+@test r.username == "bggjulia"
 @test r.rating == 10.0
-@test r.lastmodified == Date("2022-02-12")
-@test r.numplays == 0
 @test r.comment == ""
