@@ -10,8 +10,9 @@ user = userinfo(name)
 @test user.yearregistered == 2022
 
 reviews = userreviews(name)
-r = first(reviews)
-@test length(reviews) == 1
+@test length(reviews) == 4
+
+r = first(sort(reviews; by=r -> -r.rating))
 @test r.id == 188
 @test r.name == "Go"
 @test r.username == "bggjulia"
