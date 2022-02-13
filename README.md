@@ -6,11 +6,12 @@
 
 Utilities to scrape [BoardGameGeek.com](https://boardgamegeek.com), the IMDB of board games.
 
-<!-- ## Installation
+## Installation
 To install this package and its dependencies, open the Julia REPL and run 
 ```julia-repl
-julia> ]add BoardGameGeek
-``` -->
+julia> ]add https://github.com/adrhill/BoardGameGeek.jl
+```
+The package is compatible with all Julia versions starting at `1.0`.
 
 ## Example
 ```julia-repl
