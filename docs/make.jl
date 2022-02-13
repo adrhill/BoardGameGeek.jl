@@ -13,12 +13,7 @@ makedocs(;
         canonical="https://adrhill.github.io/BoardGameGeek.jl",
         assets=String[],
     ),
-    pages=[
-        "Home" => "index.md",
-    ],
+    pages=["Home" => "index.md"],
 )
 
-deploydocs(;
-    repo="github.com/adrhill/BoardGameGeek.jl",
-    devbranch="main",
-)
+deploydocs(; repo="github.com/adrhill/BoardGameGeek.jl", devbranch="main")

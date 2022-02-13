@@ -2,5 +2,10 @@ using BoardGameGeek
 using Test
 
 @testset "BoardGameGeek.jl" begin
-    # Write your tests here.
+    @testset "Get game" begin
+        include("test_game.jl")
+    end
+    @testset "Get user" begin
+        include("test_user.jl")
+    end
 end
