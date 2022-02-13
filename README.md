@@ -24,13 +24,14 @@ julia> userreviews("bggjulia")
 
 ## Quick reference
 ### Exported functions
-|                       |                                                   |
+|                       | Description                                       |
 |:----------------------|:--------------------------------------------------|
 | `gamereviews(id)`     | return all ratings & reviews written about a game |
-| `gameinfo(id)`        | return some basic information about a game        |
-| `userreviews(name)`   | return all reviews written by a user              | 
-| `userinfo(name)`      | return some basic user information                |
+| `gameinfo(id)`        | return basic information about a game             |
+| `userreviews(name)`   | return all reviews written by a user              |
+| `userinfo(name)`      | return basic user information                     |
 | `buddies(name)`       | return usernames of a user's friends              |
+
 
 ### Data types
 `BGGReview`
