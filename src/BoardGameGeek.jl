@@ -16,7 +16,7 @@ include("game.jl")
 include("user.jl")
 
 export BGGUser
-export userinfo, userreviews, buddies
+export userinfo, userreviews, buddies, collection
 export gameinfo, gamereviews
 
 end # module

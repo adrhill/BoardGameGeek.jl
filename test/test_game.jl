@@ -12,3 +12,6 @@ reviews = gamereviews(id)
 
 reviews2 = gamereviews(id; waittime=2.5, pagesize=50)
 @test reviews2 == reviews
+
+games = gameinfo([id])
+@test first(games).name == game.name
