@@ -13,8 +13,6 @@ end
 struct BGGGameInfo
     id::Int
     name::String
-    mechanics::Vector{String}
-    families::Vector{String}
     yearpublished::Int
     minplayers::Int
     maxplayers::Int
@@ -22,7 +20,6 @@ struct BGGGameInfo
     minplaytime::Int
     maxplaytime::Int
     minage::Int
-    suggested_numplayers::Dict{String,Tuple{Int64,Int64,Int64}}
     usersrated::Int
     average::Float32
     bayesaverage::Float32
@@ -35,6 +32,9 @@ struct BGGGameInfo
     numcomments::Int
     numweights::Int
     averageweight::Float32
+    mechanics::Vector{String}
+    families::Vector{String}
+    suggested_numplayers::Dict{String,Tuple{Int64,Int64,Int64}}
 end
 
 """
@@ -86,10 +86,11 @@ end
 
 """
     gameinfo(id::Integer)
+    gameinfo(ids::AbstractArray{<:Integer})
 
 Get game information and summary of reviews.
 """
-function gameinfo(id::Integer)
+function gameinfo(id::Integer; waittime=0.0f0)
     doc = get_xml("$XMLAPI2/thing?id=$(id)&stats=1")
     game = findfirst("/items/item", doc)
 
@@ -136,11 +137,10 @@ function gameinfo(id::Integer)
     numweights = parse(Int, findfirst("numweights", ratings)["value"])
     averageweight = parse(Float32, findfirst("averageweight", ratings)["value"])
 
+    sleep(waittime)
     return BGGGameInfo(
         id,
         name,
-        boardgamemechanic,
-        boardgamefamily,
         yearpublished,
         minplayers,
         maxplayers,
@@ -148,7 +148,6 @@ function gameinfo(id::Integer)
         minplaytime,
         maxplaytime,
         minage,
-        suggested_numplayers,
         usersrated,
         average,
         bayesaverage,
@@ -161,5 +160,17 @@ function gameinfo(id::Integer)
         numcomments,
         numweights,
         averageweight,
+        boardgamemechanic,
+        boardgamefamily,
+        suggested_numplayers,
     )
+end
+
+function gameinfo(ids::AbstractArray{<:Integer}; waittime=2.0f0) # add waittime by default
+    gamecount = length(ids)
+    games = Vector{BGGGameInfo}(undef, gamecount) # pre-allocate
+    @showprogress 1 "Scraping $gamecount games..." for (i, n) in enumerate(ids)
+        games[i] = gameinfo(n; waittime=waittime)
+    end
+    return games
 end
