@@ -13,7 +13,7 @@ pkg> add BoardGameGeek
 ```
 BoardGameGeek.jl is compatible with all Julia versions ⩾ `1.0`.
 
-## Quick tour
+## Getting started
 Start by importing this package and [DataFrames.jl](https://github.com/JuliaData/DataFrames.jl):
 ```julia
 using BoardGameGeek
@@ -35,7 +35,7 @@ julia> DataFrame(userreviews(user))
    4 │ 256960  Pax Pamir: Second Edition  bggjulia      9.0
 ```
 
-or simply use `collection` get the game IDs of his collection
+or simply use `collection` get the game IDs of their collection
 ```julia
 julia> collection(user)
 4-element Vector{Int64}:
@@ -74,7 +74,7 @@ The default wait time of 2 seconds per 100 reviews can be changed via the keywor
 
 ### Full game info
 Use `gameinfo(id)` to obtain all sorts of information about a game. 
-Refer to the reference below for a summary of all data.
+A summary of all data is given in the reference below.
 ```julia
 julia> DataFrame(gameinfo(collection(user)))
 4×24 DataFrame
