@@ -27,4 +27,4 @@ vbuds = buddies([name])
 vreviews = userreviews([name])
 @test first(vuser) == user
 @test first(vbuds) == buds
-@test first(vreviews) == reviews
+@test vreviews == reviews
