@@ -154,5 +154,5 @@ suggested_numplayers :: Dict{String, Tuple{Int64, Int64, Int64}}
 [ci-img]: https://github.com/adrhill/BoardGameGeek.jl/workflows/CI/badge.svg
 [ci-url]: https://github.com/adrhill/BoardGameGeek.jl/actions
 
-[codecov-img]: https://codecov.io/gh/adrhill/BoardGameGeek.jl/branch/master/graph/badge.svg
+[codecov-img]: https://codecov.io/gh/adrhill/BoardGameGeek.jl/branch/main/graph/badge.svg
 [codecov-url]: https://codecov.io/gh/adrhill/BoardGameGeek.jl
