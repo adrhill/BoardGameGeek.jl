@@ -11,7 +11,7 @@ To install this package, open the Julia package manager by typing `]` in the REP
 ```julia-repl
 pkg> add BoardGameGeek
 ```
-BoardGameGeek.jl is compatible with all Julia versions ⩾ `1.0`.
+BoardGameGeek.jl is compatible with all Julia versions ⩾ `1.6`.
 
 ## Getting started
 Start by importing this package and [DataFrames.jl](https://github.com/JuliaData/DataFrames.jl):
