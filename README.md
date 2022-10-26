@@ -1,8 +1,5 @@
 # BoardGameGeek.jl
-
-| **Documentation**                                                     | **Build Status**                                      |
-|:----------------------------------------------------------------------|:------------------------------------------------------|
-| [![][docs-stab-img]][docs-stab-url] [![][docs-dev-img]][docs-dev-url] | [![][ci-img]][ci-url] [![][codecov-img]][codecov-url] |
+[![][ci-img]][ci-url] [![][codecov-img]][codecov-url]
 
 Utilities to scrape [BoardGameGeek.com](https://boardgamegeek.com), the IMDB of board games.
 
@@ -144,12 +141,6 @@ mechanics            :: Vector{String}
 families             :: Vector{String}
 suggested_numplayers :: Dict{String, Tuple{Int64, Int64, Int64}}
 ```
-
-[docs-stab-img]: https://img.shields.io/badge/docs-stable-blue.svg
-[docs-stab-url]: https://adrhill.github.io/BoardGameGeek.jl/stable
-
-[docs-dev-img]: https://img.shields.io/badge/docs-main-blue.svg
-[docs-dev-url]: https://adrhill.github.io/BoardGameGeek.jl/dev
 
 [ci-img]: https://github.com/adrhill/BoardGameGeek.jl/workflows/CI/badge.svg
 [ci-url]: https://github.com/adrhill/BoardGameGeek.jl/actions
